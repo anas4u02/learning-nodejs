@@ -22,14 +22,44 @@ log("Reading asynchrnously");
  */
 
 // ///////////////SERVER/////////////////////
+const tempOverview = fs.readFileSync(`${__dirname}/templates/template-overview.html`, 'utf-8');
+const tempCard = fs.readFileSync(`${__dirname}/templates/template-card.html`, 'utf-8');
+const tempProduct = fs.readFileSync(`${__dirname}/templates/product.html`, 'utf-8');
 
+const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
+const dataObj = JSON.parse(data);
+
+const replaceTemplate = (temp, product) => {
+    let output = temp.replace(/{%productName%}/g, product.productName);
+    output = output.replace(/{%image%}/g, product.image);
+    output = output.replace(/{%price%}/g, product.price);
+    output = output.replace(/{%from%}/g, product.from);
+    output = output.replace(/{%nutrients%}/g, product.nutrients);
+    output = output.replace(/{%quantity%}/g, product.quantity);
+    output = output.replace(/{%productDescription%}/g, product.description);
+    output = output.replace(/{%ID%}/g, product.id);
+    if(!product.organic) output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic');
+    return output;
+}
 const server = http.createServer((req, res) => {
     const pathName = req.url;
-    if (pathName === '/' || pathName === '/overview') {
-        res.end("This is the overview");
+    if (pathName === '/' || pathName ===  '/overview') {
+        res.writeHead(200, {
+            'Content-type': 'text/html'
+        });
+
+        const cardsHtml = dataObj.map(element => replaceTemplate(tempCard, element)).join('');
+        const output = tempOverview.replace('{%productCards%}', cardsHtml);
+        res.end(output);
     } else if (pathName === '/product') {
         res.end("This is product");
-    } else {
+    } else if (pathName === '/api') {
+        res.writeHead(200, {
+            'Content-type': 'application/json'
+        });
+        res.end(data);
+    }
+    else {
         res.writeHead(404);
         res.end("Page Not Found!!")
     }
